@@ -18,7 +18,12 @@ from .glib import GLib
 from .interfaces.advertisement import Advertisement
 from .interfaces.agent import Agent
 from .interfaces.gatt import Application
-from .types import DBUSErrorCallback, DeviceEventCallback, NoneCallback
+from .types import (
+    AdvertsementChangeCallback,
+    DBUSErrorCallback,
+    DeviceEventCallback,
+    NoneCallback,
+)
 from .utils import find_adapter
 
 
@@ -38,6 +43,15 @@ class BLEManager:
         self._ad_manager = _AdManager(self.bus, self._adapter)
         self._app_manager = _AppManager(self.bus, self._adapter)
         self._agent_manager = _AgentManager(self.bus)
+
+        self.on_advertising_change: Optional[AdvertsementChangeCallback] = None
+        """
+        Callback invoked when the advertising status changes or there is an error.
+        
+        Args:
+            bool: The new advertising state
+            DBUSException: The exception if there is one. Defaults to None
+        """
 
         self.on_connect: Optional[DeviceEventCallback] = None
         self.on_disconnect: Optional[DeviceEventCallback] = None
@@ -62,13 +76,13 @@ class BLEManager:
 
         self.connected = False
 
-    def set_advertisement(self, ad: Advertisement, start_ad: bool = False):
+    def set_advertisement(self, ad: Advertisement, start: bool = False):
         # If we are advertising, unregister the current advertisement
         self.advertising = False
 
         self._ad = ad
 
-        if start_ad:
+        if start:
             self.advertising = True
 
     @property
@@ -83,12 +97,18 @@ class BLEManager:
                     "No advertisement set. Remember to call `set_advertisement` first"
                 )
 
-            self._ad_manager.register_advertisement(self._ad)
-            self._advertising = True
+            self._ad_manager.register_advertisement(
+                self._ad,
+                on_success=self.__advertising_registered,
+                on_error=self.__advertising_error,
+            )
 
         elif self._ad:
-            self._ad_manager.unregister_advertisement(self._ad)
-            self._advertising = False
+            self._ad_manager.unregister_advertisement(
+                self._ad,
+                on_success=self.__advertising_unregistered,
+                on_error=self.__advertising_error,
+            )
 
     @property
     def agent(self):
@@ -162,12 +182,19 @@ class BLEManager:
             if "Connected" in properties:
                 self._set_connected_status(properties["Connected"])
 
-    def _adv_added(self):
-        print("Added advertisement")
+    def __advertising_registered(self):
+        self._advertising = True
+        if self.on_advertising_change:
+            self.on_advertising_change(True, None)
 
-    def _adv_error(self, error):
-        print(f"Cannot add advertisement: {error}")
-        self.advertisement = None
+    def __advertising_unregistered(self):
+        self._advertising = False
+        if self.on_advertising_change:
+            self.on_advertising_change(False, None)
+
+    def __advertising_error(self, error):
+        if self.on_advertising_change:
+            self.on_advertising_change(self._advertising, error)
 
     def _app_added(self):
         print("Added application")
@@ -195,7 +222,6 @@ class _AdManager:
         on_success: Optional[NoneCallback] = None,
         on_error: Optional[DBUSErrorCallback] = None,
     ):
-        print(f"Registering advertisement {ad.get_path()}")
         self._interface.RegisterAdvertisement(
             ad.get_path(),
             {},
