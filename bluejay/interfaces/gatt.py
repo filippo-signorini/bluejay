@@ -3,10 +3,16 @@ import typing
 import dbus
 import dbus.service
 
-import ble_utils.constants as const
-import ble_utils.enums as enums
-import ble_utils.exceptions as exc
-import ble_utils.utils as utils
+from ..constants import (
+    ADVERTISEMENT_INTERFACE,
+    DBUS_OM_IFACE,
+    DBUS_PROPERTIES,
+    GATT_CHARACTERISTIC_INTERFACE,
+    GATT_DESCRIPTOR_INTERFACE,
+    GATT_SERVICE_INTERFACE,
+)
+from ..enums import CharacteristicFlag, DescriptorFlag
+from ..exceptions import InvalidArgsException, NotSupportedException
 
 
 class Application(dbus.service.Object):
@@ -22,7 +28,7 @@ class Application(dbus.service.Object):
     def add_service(self, service: "Service"):
         self.services.append(service)
 
-    @dbus.service.method(const.DBUS_OM_IFACE, out_signature="a{oa{sa{sv}}}")
+    @dbus.service.method(DBUS_OM_IFACE, out_signature="a{oa{sa{sv}}}")
     def GetManagedObjects(self):  # pylint: disable=invalid-name
         response = {}
         for serv in self.services:
@@ -55,7 +61,7 @@ class Service(dbus.service.Object):
 
     def get_properties(self):
         return {
-            const.GATT_SERVICE_INTERFACE: {
+            GATT_SERVICE_INTERFACE: {
                 "UUID": self.uuid,
                 "Primary": self.primary,
                 "Characteristics": dbus.Array(
@@ -76,15 +82,13 @@ class Service(dbus.service.Object):
     def get_characteristics(self):
         return self.characteristics
 
-    @dbus.service.method(const.DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
+    @dbus.service.method(DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
     def GetAll(self, interface):  # pylint: disable=invalid-name
-        if interface != const.GATT_SERVICE_INTERFACE:
-            raise exc.InvalidArgsException()
-        return self.get_properties()[const.GATT_SERVICE_INTERFACE]
+        if interface != GATT_SERVICE_INTERFACE:
+            raise InvalidArgsException()
+        return self.get_properties()[GATT_SERVICE_INTERFACE]
 
-    @dbus.service.method(
-        const.ADVERTISEMENT_INTERFACE, in_signature="", out_signature=""
-    )
+    @dbus.service.method(ADVERTISEMENT_INTERFACE, in_signature="", out_signature="")
     def Release(self):  # pylint: disable=invalid-name
         print(f"{self.path}: Released")
 
@@ -97,7 +101,7 @@ class Characteristic(dbus.service.Object):
         bus: dbus.SystemBus,
         index: int,
         uuid: str,
-        flags: list[enums.CharacteristicFlag],
+        flags: list[CharacteristicFlag],
         service: Service,
     ):  # pylint: disable=too-many-arguments
         self.path = f"{service.path}/char{index}"
@@ -110,7 +114,7 @@ class Characteristic(dbus.service.Object):
 
     def get_properties(self):
         return {
-            const.GATT_CHARACTERISTIC_INTERFACE: {
+            GATT_CHARACTERISTIC_INTERFACE: {
                 "Service": self.service.get_path(),
                 "UUID": self.uuid,
                 "Flags": [flag.value for flag in self.flags],
@@ -130,54 +134,54 @@ class Characteristic(dbus.service.Object):
     def get_descriptors(self):
         return self.descriptors
 
-    @dbus.service.method(const.DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
+    @dbus.service.method(DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
     def GetAll(
         self,
         interface,
     ):  # pylint: disable=invalid-name
-        if interface != const.GATT_CHARACTERISTIC_INTERFACE:
-            raise exc.InvalidArgsException()
+        if interface != GATT_CHARACTERISTIC_INTERFACE:
+            raise InvalidArgsException()
 
-        return self.get_properties()[const.GATT_CHARACTERISTIC_INTERFACE]
+        return self.get_properties()[GATT_CHARACTERISTIC_INTERFACE]
 
     @dbus.service.method(
-        const.GATT_CHARACTERISTIC_INTERFACE, in_signature="a{sv}", out_signature="ay"
+        GATT_CHARACTERISTIC_INTERFACE, in_signature="a{sv}", out_signature="ay"
     )
     def ReadValue(
         self,
         options,  # pylint: disable=unused-argument
     ):  # pylint: disable=invalid-name
         print(f"{self.path}: Default ReadValue called, returning error")
-        raise exc.NotSupportedException()
+        raise NotSupportedException()
 
-    @dbus.service.method(const.GATT_CHARACTERISTIC_INTERFACE, in_signature="aya{sv}")
+    @dbus.service.method(GATT_CHARACTERISTIC_INTERFACE, in_signature="aya{sv}")
     def WriteValue(
         self,
         value: list[int],  # pylint: disable=unused-argument
         options: dict[str, typing.Any],  # pylint: disable=unused-argument
     ):  # pylint: disable=invalid-name
         print(f"{self.path}: Default WriteValue called, returning error")
-        raise exc.NotSupportedException()
+        raise NotSupportedException()
 
-    @dbus.service.method(const.GATT_CHARACTERISTIC_INTERFACE)
+    @dbus.service.method(GATT_CHARACTERISTIC_INTERFACE)
     def StartNotify(self):  # pylint: disable=invalid-name
         print("Default StartNotify called, returning error")
-        raise exc.NotSupportedException()
+        raise NotSupportedException()
 
-    @dbus.service.method(const.GATT_CHARACTERISTIC_INTERFACE)
+    @dbus.service.method(GATT_CHARACTERISTIC_INTERFACE)
     def StopNotify(self):  # pylint: disable=invalid-name
         print("Default StopNotify called, returning error")
-        raise exc.NotSupportedException()
+        raise NotSupportedException()
 
     def emitPropertiesChanged(
         self,
         changed,
-        interface=const.GATT_CHARACTERISTIC_INTERFACE,
+        interface=GATT_CHARACTERISTIC_INTERFACE,
         invalidated=[],
     ):
         self.PropertiesChanged(interface, changed, invalidated)
 
-    @dbus.service.signal(const.DBUS_PROPERTIES, signature="sa{sv}as")
+    @dbus.service.signal(DBUS_PROPERTIES, signature="sa{sv}as")
     def PropertiesChanged(
         self,
         interface,
@@ -195,7 +199,7 @@ class Descriptor(dbus.service.Object):
         bus: dbus.SystemBus,
         index: int,
         uuid: str,
-        flags: list[enums.DescriptorFlag],
+        flags: list[DescriptorFlag],
         characteristic: Characteristic,
     ):  # pylint: disable=too-many-arguments
         self.path = f"{characteristic.path}/desc{index}"
@@ -207,7 +211,7 @@ class Descriptor(dbus.service.Object):
 
     def get_properties(self):
         return {
-            const.GATT_DESCRIPTOR_INTERFACE: {
+            GATT_DESCRIPTOR_INTERFACE: {
                 "Characteristic": self.characteristic.get_path(),
                 "UUID": self.uuid,
                 "Flags": self.flags,
@@ -217,27 +221,27 @@ class Descriptor(dbus.service.Object):
     def get_path(self):
         return dbus.ObjectPath(self.path)
 
-    @dbus.service.method(const.DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
+    @dbus.service.method(DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
     def GetAll(self, interface):  # pylint: disable=invalid-name
-        if interface != const.GATT_DESCRIPTOR_INTERFACE:
-            raise exc.InvalidArgsException()
-        return self.get_properties()[const.GATT_DESCRIPTOR_INTERFACE]
+        if interface != GATT_DESCRIPTOR_INTERFACE:
+            raise InvalidArgsException()
+        return self.get_properties()[GATT_DESCRIPTOR_INTERFACE]
 
     @dbus.service.method(
-        const.GATT_DESCRIPTOR_INTERFACE, in_signature="a{sv}", out_signature="ay"
+        GATT_DESCRIPTOR_INTERFACE, in_signature="a{sv}", out_signature="ay"
     )
     def ReadValue(
         self,
         options,  # pylint: disable=unused-argument
     ):  # pylint: disable=invalid-name
         print(f"{self.path}: Default ReadValue called, returning error")
-        raise exc.NotSupportedException()
+        raise NotSupportedException()
 
-    @dbus.service.method(const.GATT_DESCRIPTOR_INTERFACE, in_signature="aya{sv}")
+    @dbus.service.method(GATT_DESCRIPTOR_INTERFACE, in_signature="aya{sv}")
     def WriteValue(
         self,
         value,  # pylint: disable=unused-argument
         options,  # pylint: disable=unused-argument
     ):  # pylint: disable=invalid-name
         print(f"{self.path}: Default WriteValue called, returning error")
-        raise exc.NotSupportedException()
+        raise NotSupportedException()

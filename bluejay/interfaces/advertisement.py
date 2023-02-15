@@ -3,10 +3,10 @@ import typing
 import dbus
 import dbus.service
 
-import ble_utils.constants as const
-import ble_utils.enums as enums
-import ble_utils.exceptions as exc
-import ble_utils.utils as utils
+from ..constants import ADVERTISEMENT_INTERFACE, DBUS_PROPERTIES
+from ..enums import AdType
+from ..exceptions import InvalidArgsException
+from ..utils import is_empty_array, is_empty_dict
 
 
 class Advertisement(dbus.service.Object):
@@ -19,7 +19,7 @@ class Advertisement(dbus.service.Object):
         bus: dbus.SystemBus,
         path: str,
         index: int,
-        ad_type: enums.AdType,
+        ad_type: AdType,
     ):
         self.path = f"{path}/advertisement{index}"
         self.bus = bus
@@ -170,25 +170,25 @@ class Advertisement(dbus.service.Object):
 
     def get_properties(self):
         properties = {"Type": dbus.String(self.ad_type)}
-        if not utils.is_empty_array(self.service_uuids):
+        if not is_empty_array(self.service_uuids):
             properties["ServiceUUIDs"] = dbus.Array(self.service_uuids, signature="s")
-        if not utils.is_empty_dict(self.manufacturer_data):
+        if not is_empty_dict(self.manufacturer_data):
             properties["ManufacturerData"] = dbus.Dictionary(
                 self.manufacturer_data, signature="qv"
             )
-        if not utils.is_empty_array(self.solicit_uuids):
+        if not is_empty_array(self.solicit_uuids):
             properties["SolicitUUIDs"] = dbus.Array(self.solicit_uuids, signature="s")
-        if not utils.is_empty_dict(self.service_data):
+        if not is_empty_dict(self.service_data):
             properties["ServiceData"] = dbus.Dictionary(
                 self.service_data, signature="sv"
             )
-        if not utils.is_empty_dict(self.data):
+        if not is_empty_dict(self.data):
             properties["Data"] = dbus.Dictionary(self.data, signature="yv")
         if self.discoverable:
             properties["Discoverable"] = dbus.Boolean(True)
         if self.discoverable_timeout:
             properties["DiscoverableTimeout"] = dbus.UInt16(self.discoverable_timeout)
-        if not utils.is_empty_array(self.includes):
+        if not is_empty_array(self.includes):
             properties["Includes"] = dbus.Array(self.includes, signature="s")
         if self.local_name:
             properties["LocalName"] = dbus.String(self.local_name)
@@ -206,7 +206,7 @@ class Advertisement(dbus.service.Object):
             properties["MaxInterval"] = dbus.UInt32(self.max_interval)
         if self.tx_power:
             properties["TxPower"] = dbus.Int16(self.tx_power)
-        return {const.ADVERTISEMENT_INTERFACE: properties}
+        return {ADVERTISEMENT_INTERFACE: properties}
 
     def get_path(self):
         return dbus.ObjectPath(self.path)
@@ -236,11 +236,11 @@ class Advertisement(dbus.service.Object):
             self.data = {}
         self.data[ad_type] = dbus.Array(data, signature="y")
 
-    @dbus.service.method(const.DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
+    @dbus.service.method(DBUS_PROPERTIES, in_signature="s", out_signature="a{sv}")
     def GetAll(
         self,
         interface: dbus.Interface,
     ):  # pylint: disable=invalid-name
-        if interface != const.ADVERTISEMENT_INTERFACE:
-            raise exc.InvalidArgsException()
-        return self.get_properties()[const.ADVERTISEMENT_INTERFACE]
+        if interface != ADVERTISEMENT_INTERFACE:
+            raise InvalidArgsException()
+        return self.get_properties()[ADVERTISEMENT_INTERFACE]

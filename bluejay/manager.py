@@ -4,7 +4,7 @@ from typing import Callable, Optional
 import dbus
 import dbus.service
 
-from ble_utils.constants import (
+from .constants import (
     ADVERTISING_MANAGER_INTERFACE,
     AGENT_MANAGER_INTERFACE,
     BLUEZ_NAMESPACE,
@@ -14,12 +14,12 @@ from ble_utils.constants import (
     DEVICE_INTERFACE,
     GATT_MANAGER_INTERFACE,
 )
-from ble_utils.glib import GLib
-from ble_utils.interfaces.advertisement import Advertisement
-from ble_utils.interfaces.agent import Agent
-from ble_utils.interfaces.gatt import Application
-from ble_utils.types import DBUSErrorCallback, DeviceEventCallback, NoneCallback
-from ble_utils.utils import find_adapter
+from .glib import GLib
+from .interfaces.advertisement import Advertisement
+from .interfaces.agent import Agent
+from .interfaces.gatt import Application
+from .types import DBUSErrorCallback, DeviceEventCallback, NoneCallback
+from .utils import find_adapter
 
 
 class BLEManager:

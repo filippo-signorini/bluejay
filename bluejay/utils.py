@@ -3,7 +3,7 @@ from typing import Optional, Union
 import dbus
 import dbus.service
 
-from ble_utils.constants import (
+from .constants import (
     ADAPTER_INTERFACE,
     BLUEZ_SERVICE_NAME,
     DBUS_OM_IFACE,
