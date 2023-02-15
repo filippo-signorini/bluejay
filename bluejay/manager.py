@@ -121,21 +121,16 @@ class BLEManager:
     def _set_connected_status(self, status):
         if status == 1:
             self.connected = True
-            if self.advertisement:
-                self._ad_manager.unregister_advertisement(self.advertisement)
+            self.advertising = False
 
             if self.on_connect:
                 self.on_connect("s")
         else:
             self.connected = False
-            if self.advertisement:
-                self._ad_manager.register_advertisement(
-                    self.advertisement,
-                    on_success=self._adv_added,
-                    on_error=self._adv_error,
-                )
-                if self.on_disconnect:
-                    self.on_disconnect("s")
+            self.advertising = True
+
+            if self.on_disconnect:
+                self.on_disconnect("s")
 
     def _properties_changed(
         self,
