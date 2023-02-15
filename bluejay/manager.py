@@ -27,7 +27,7 @@ class BLEManager:
         self.base_path = base_path
         self.GLib = GLib()
         self.mainloop = GLib.MainLoop()
-        # threading.Thread(target=self.mainloop.run, daemon=True).start()
+        threading.Thread(target=self.mainloop.run, daemon=True).start()
 
         self._debug = debug
         self.bus = dbus.SystemBus()
