@@ -55,28 +55,40 @@ class BLEManager:
         )
 
         self._ad: Optional[Advertisement] = None
+        self._advertising: bool = False
+
         self._app: Optional[Application] = None
         self._agent: Optional[Agent] = None
 
         self.connected = False
 
-    @property
-    def advertisement(self):
-        return self._ad
+    def set_advertisement(self, ad: Advertisement, start_ad: bool = False):
+        # If we are advertising, unregister the current advertisement
+        self.advertising = False
 
-    @advertisement.setter
-    def advertisement(self, ad: Optional[Advertisement]):
-        if ad is None:
-            if self._ad:
-                self._ad_manager.unregister_advertisement(self._ad)
-                self._ad = None
-        else:
-            self._ad = ad
-            self._ad_manager.register_advertisement(
-                self._ad,
-                on_success=self._adv_added,
-                on_error=self._adv_error,
-            )
+        self._ad = ad
+
+        if start_ad:
+            self.advertising = True
+
+    @property
+    def advertising(self):
+        return self._advertising
+
+    @advertising.setter
+    def advertising(self, state: bool):
+        if state is True:
+            if self._ad is None:
+                raise ValueError(
+                    "No advertisement set. Remember to call `set_advertisement` first"
+                )
+
+            self._ad_manager.register_advertisement(self._ad)
+            self._advertising = True
+
+        elif self._ad:
+            self._ad_manager.unregister_advertisement(self._ad)
+            self._advertising = False
 
     @property
     def agent(self):
