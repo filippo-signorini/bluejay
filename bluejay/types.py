@@ -1,10 +1,18 @@
-import typing
+from typing import Any, Callable, Literal, Optional
 
-import dbus
+from dbus.exceptions import DBusException
 
-NoneCallback = typing.Callable[[], None]
-DBUSErrorCallback = typing.Callable[[dbus.exceptions.DBusException], None]
-DeviceEventCallback = typing.Callable[[typing.Any], None]
-AdvertsementChangeCallback = typing.Callable[
-    [bool, typing.Optional[dbus.exceptions.DBusException]], None
+from .interfaces.gatt import Application
+
+NoneCallback = Callable[[], None]
+DBUSErrorCallback = Callable[[DBusException], None]
+DeviceEventCallback = Callable[[Any], None]
+AdvertsementChangeCallback = Callable[[bool, Optional[DBusException]], None]
+ApplicationChangedCallback = Callable[
+    [
+        Application,
+        Literal["registered", "unregistered", "error"],
+        Optional[DBusException],
+    ],
+    None,
 ]

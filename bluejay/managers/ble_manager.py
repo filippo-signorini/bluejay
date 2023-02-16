@@ -1,5 +1,5 @@
 import threading
-from typing import Optional
+from typing import List, Optional
 
 import dbus
 import dbus.service
@@ -9,7 +9,11 @@ from ..glib import GLib
 from ..interfaces.advertisement import Advertisement
 from ..interfaces.agent import Agent
 from ..interfaces.gatt import Application
-from ..types import AdvertsementChangeCallback, DeviceEventCallback
+from ..types import (
+    AdvertsementChangeCallback,
+    ApplicationChangedCallback,
+    DeviceEventCallback,
+)
 from ..utils import find_adapter
 from .advertising_manager import AdvertisingManager
 from .agent_manager import AgentManager
@@ -43,6 +47,17 @@ class BLEManager:
             DBUSException: The exception if there is one. Defaults to None
         """
 
+        self.on_application_change: Optional[ApplicationChangedCallback] = None
+        """
+        Callback invoked when an application has been registered
+        
+        Args:
+            Application: The GATT application that has been registered
+            string ['registered', 'unregistered', 'error']: Whether or not the application
+                has been registered or there has been an error
+            DBUSException: The exception if there is one. Defaults to None
+        """
+
         self.on_connect: Optional[DeviceEventCallback] = None
         self.on_disconnect: Optional[DeviceEventCallback] = None
 
@@ -61,7 +76,7 @@ class BLEManager:
         self._ad: Optional[Advertisement] = None
         self._advertising: bool = False
 
-        self._app: Optional[Application] = None
+        self._apps: List[Application] = []
         self._agent: Optional[Agent] = None
 
         self.connected = False
@@ -98,6 +113,22 @@ class BLEManager:
                 self._ad,
                 on_success=self.__advertising_unregistered,
                 on_error=self.__advertising_error,
+            )
+
+    def add_application(self, app: Application):
+        if not app in self._apps:
+            self._app_manager.register_application(
+                app,
+                on_success=lambda: self.__application_registered(app),
+                on_error=lambda err: self.__application_error(err, app),
+            )
+
+    def remove_application(self, app: Application):
+        if app in self._apps:
+            self._app_manager.unregister_application(
+                app,
+                on_success=lambda: self.__application_unregistered(app),
+                on_error=lambda err: self.__application_error(err, app),
             )
 
     @property
@@ -185,6 +216,20 @@ class BLEManager:
     def __advertising_error(self, error):
         if self.on_advertising_change:
             self.on_advertising_change(self._advertising, error)
+
+    def __application_registered(self, app: Application):
+        self._apps.append(app)
+        if self.on_application_change:
+            self.on_application_change(app, "registered", None)
+
+    def __application_unregistered(self, app: Application):
+        self._apps.remove(app)
+        if self.on_application_change:
+            self.on_application_change(app, "unregistered", None)
+
+    def __application_error(self, error, app):
+        if self.on_application_change:
+            self.on_application_change(app, "error", error)
 
     def _app_added(self):
         print("Added application")
