@@ -1,38 +1,28 @@
 import threading
-from typing import Callable, Optional
+from typing import Optional
 
 import dbus
 import dbus.service
 
-from .constants import (
-    ADVERTISING_MANAGER_INTERFACE,
-    AGENT_MANAGER_INTERFACE,
-    BLUEZ_NAMESPACE,
-    BLUEZ_SERVICE_NAME,
-    DBUS_OM_IFACE,
-    DBUS_PROPERTIES,
-    DEVICE_INTERFACE,
-    GATT_MANAGER_INTERFACE,
-)
-from .glib import GLib
-from .interfaces.advertisement import Advertisement
-from .interfaces.agent import Agent
-from .interfaces.gatt import Application
-from .types import (
-    AdvertsementChangeCallback,
-    DBUSErrorCallback,
-    DeviceEventCallback,
-    NoneCallback,
-)
-from .utils import find_adapter
+from ..constants import DBUS_OM_IFACE, DBUS_PROPERTIES, DEVICE_INTERFACE
+from ..glib import GLib
+from ..interfaces.advertisement import Advertisement
+from ..interfaces.agent import Agent
+from ..interfaces.gatt import Application
+from ..types import AdvertsementChangeCallback, DeviceEventCallback
+from ..utils import find_adapter
+from .advertising_manager import AdvertisingManager
+from .agent_manager import AgentManager
+from .application_manager import ApplicationManager
 
 
 class BLEManager:
-    def __init__(self, base_path: str, debug=False):
+    def __init__(self, base_path: str, run_mainloop=True, debug=False):
         self.base_path = base_path
         self.GLib = GLib()
         self.mainloop = GLib.MainLoop()
-        threading.Thread(target=self.mainloop.run, daemon=True).start()
+        if run_mainloop:
+            threading.Thread(target=self.mainloop.run, daemon=True).start()
 
         self._debug = debug
         self.bus = dbus.SystemBus()
@@ -40,9 +30,9 @@ class BLEManager:
         assert adapter
         self._adapter = adapter
 
-        self._ad_manager = _AdManager(self.bus, self._adapter)
-        self._app_manager = _AppManager(self.bus, self._adapter)
-        self._agent_manager = _AgentManager(self.bus)
+        self._ad_manager = AdvertisingManager(self.bus, self._adapter)
+        self._app_manager = ApplicationManager(self.bus, self._adapter)
+        self._agent_manager = AgentManager(self.bus)
 
         self.on_advertising_change: Optional[AdvertsementChangeCallback] = None
         """
@@ -207,115 +197,3 @@ class BLEManager:
 
     def _agent_error(self, error):
         print(f"Cannot add agent: {error}")
-
-
-class _AdManager:
-    def __init__(self, bus: dbus.SystemBus, adapter: dbus.service.Object):
-        self._interface = dbus.Interface(
-            bus.get_object(BLUEZ_SERVICE_NAME, adapter),
-            ADVERTISING_MANAGER_INTERFACE,
-        )
-
-    def register_advertisement(
-        self,
-        ad: Advertisement,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.RegisterAdvertisement(
-            ad.get_path(),
-            {},
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
-
-    def unregister_advertisement(
-        self,
-        ad: Advertisement,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.UnregisterAdvertisement(
-            ad.get_path(),
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
-
-
-class _AppManager:
-    def __init__(self, bus: dbus.SystemBus, adapter: dbus.service.Object):
-        self._interface = dbus.Interface(
-            bus.get_object(BLUEZ_SERVICE_NAME, adapter),
-            GATT_MANAGER_INTERFACE,
-        )
-
-    def register_application(
-        self,
-        app: Application,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.RegisterApplication(
-            app.get_path(),
-            {},
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
-
-    def unregister_application(
-        self,
-        app: Application,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.UnregisterApplication(
-            app.get_path(),
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
-
-
-class _AgentManager:
-    def __init__(self, bus: dbus.SystemBus):
-        self._interface = dbus.Interface(
-            bus.get_object(BLUEZ_SERVICE_NAME, BLUEZ_NAMESPACE),
-            AGENT_MANAGER_INTERFACE,
-        )
-
-    def register_agent(
-        self,
-        agent: Agent,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.RegisterAgent(
-            agent.get_path(),
-            agent.capability,
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
-        self._request_default_agent(agent, on_success, on_error)
-
-    def _request_default_agent(
-        self,
-        agent: Agent,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.RequestDefaultAgent(
-            agent.get_path(),
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
-
-    def unregister_agent(
-        self,
-        agent: Agent,
-        on_success: Optional[NoneCallback] = None,
-        on_error: Optional[DBUSErrorCallback] = None,
-    ):
-        self._interface.UnregisterAgent(
-            agent.get_path(),
-            reply_handler=on_success,
-            error_handler=on_error,
-        )
