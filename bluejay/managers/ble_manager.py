@@ -135,20 +135,6 @@ class BLEManager:
     def agent(self):
         return self._agent
 
-    @property
-    def application(self):
-        return self._app
-
-    @application.setter
-    def application(self, app: Optional[Application]):
-        if app is None:
-            if self._app:
-                self._app_manager.unregister_application(self._app)
-                self._app = None
-        else:
-            self._app = app
-            self._app_manager.register_application(app)
-
     @agent.setter
     def agent(self, agent: Optional[Agent]):
         if agent is None:
