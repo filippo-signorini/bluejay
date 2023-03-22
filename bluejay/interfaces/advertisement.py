@@ -18,9 +18,27 @@ class Advertisement(dbus.service.Object):
         self,
         bus: dbus.SystemBus,
         path: str,
-        index: int,
-        ad_type: AdType,
+        index: int = 1,
+        ad_type: AdType = AdType.PERIPHERAL,
     ):
+        """
+        Constructor. Parameters bus and path are required
+
+        :Parameters:
+            `bus` : dbus.Bus
+                The bus on which to communicate
+
+            `object_path` : str
+                A D-Bus object path at which to make this Object available
+                immediately.
+
+            `index` : int
+                The index of this dbus advertisement object.
+
+            `ad_type`: bluejay.enums.AdType
+                The advertising type
+        """
+
         self.path = f"{path}/advertisement{index}"
         self.bus = bus
         self.ad_type: str = ad_type.value
