@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Any, Optional
 
 import dbus
 import dbus.service
@@ -67,7 +67,7 @@ def isinstances(data, *instances):
     return False
 
 
-def dbus_to_python(data):
+def dbus_to_python(data) -> Any:
     if isinstances(data, dbus.String, dbus.ObjectPath):
         return str(data)
     if isinstance(data, dbus.Boolean):
