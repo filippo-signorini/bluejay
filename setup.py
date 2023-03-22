@@ -13,6 +13,6 @@ setuptools.setup(
     url="https://github.com/filippo-signorini/bluejay",
     project_urls={"Bug Tracker": "https://github.com/filippo-signorini/bluejay/issues"},
     license="GNU GPLv3",
-    packages=["bluejay"],
+    packages=["bluejay", "bluejay.interfaces", "bluejay.managers"],
     install_requires=["dbus-python"],
 )
