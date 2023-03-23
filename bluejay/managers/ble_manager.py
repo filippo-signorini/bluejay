@@ -4,7 +4,12 @@ from typing import List, Optional
 import dbus
 import dbus.service
 
-from ..constants import DBUS_OM_IFACE, DBUS_PROPERTIES, DEVICE_INTERFACE
+from ..constants import (
+    BLUEZ_SERVICE_NAME,
+    DBUS_OM_IFACE,
+    DBUS_PROPERTIES,
+    DEVICE_INTERFACE,
+)
 from ..glib import GLib
 from ..interfaces.advertisement import Advertisement
 from ..interfaces.agent import Agent
@@ -14,7 +19,7 @@ from ..types import (
     ApplicationChangedCallback,
     DeviceEventCallback,
 )
-from ..utils import find_adapter
+from ..utils import dbus_to_python, find_adapter
 from .advertising_manager import AdvertisingManager
 from .agent_manager import AgentManager
 from .application_manager import ApplicationManager
@@ -33,6 +38,9 @@ class BLEManager:
         adapter = find_adapter(self.bus)
         assert adapter
         self._adapter = adapter
+
+        self.connected_device = None
+        """ The currently connected device proxy or None """
 
         self._ad_manager = AdvertisingManager(self.bus, self._adapter)
         self._app_manager = ApplicationManager(self.bus, self._adapter)
@@ -145,10 +153,12 @@ class BLEManager:
             self._agent = agent
             self._agent_manager.register_agent(self._agent)
 
-    def _set_connected_status(self, status):
+    def _set_connected_status(self, status, device_path):
         if status == 1:
             self.connected = True
             self.advertising = False
+
+            self._set_device_proxy(device_path)
 
             if self.on_connect:
                 self.on_connect("s")
@@ -158,6 +168,12 @@ class BLEManager:
 
             if self.on_disconnect:
                 self.on_disconnect("s")
+
+    def _set_device_proxy(self, path):
+        self.connected_device = dbus.Interface(
+            self.bus.get_object(BLUEZ_SERVICE_NAME, path),
+            DEVICE_INTERFACE,
+        )
 
     def _properties_changed(
         self,
@@ -169,25 +185,26 @@ class BLEManager:
         if self._debug:
             print("Properties changed")
             print(f"Interface: {interface}")
-            print(f"Changed: {changed}")
-            print(f"Invalidated: {invalidated}")
+            print(f"Changed: {dbus_to_python(changed)}")
+            print(f"Invalidated: {dbus_to_python(invalidated)}")
             print(f"Path: {path}")
         if interface == DEVICE_INTERFACE:
             if "Connected" in changed:
-                self._set_connected_status(changed["Connected"])
+                self._set_connected_status(changed["Connected"], path)
 
     def _interfaces_added(
         self,
         path,
         interfaces,
     ):
-        print("Interfaces added")
-        print(f"Path: {path}")
-        print(f"Interfaces: {interfaces}")
+        if self._debug:
+            print("Interfaces added")
+            print(f"Path: {path}")
+            print(f"Interfaces: {dbus_to_python(interfaces)}")
         if DEVICE_INTERFACE in interfaces:
             properties = interfaces[DEVICE_INTERFACE]
             if "Connected" in properties:
-                self._set_connected_status(properties["Connected"])
+                self._set_connected_status(properties["Connected"], path)
 
     def __advertising_registered(self):
         self._advertising = True
