@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="bluejay",
-    version="0.0.4",
+    version="0.0.5",
     author="Filippo Signorini",
     description="A collection of BLE utils",
     long_description=long_description,
