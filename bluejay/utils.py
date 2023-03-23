@@ -88,4 +88,4 @@ def dbus_to_python(data) -> Any:
     if isinstance(data, dbus.Array):
         return [dbus_to_python(element) for element in data]
     if isinstance(data, dbus.Dictionary):
-        return {key: dbus_to_python(value) for key, value in data.items()}
+        return {str(key): dbus_to_python(value) for key, value in data.items()}
