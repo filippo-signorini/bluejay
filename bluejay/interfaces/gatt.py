@@ -207,7 +207,7 @@ class Descriptor(dbus.service.Object):
         self.uuid = uuid
         self.flags = flags
         self.characteristic = characteristic
-        super().__init__()
+        super().__init__(bus, self.path)
 
     def get_properties(self):
         return {
