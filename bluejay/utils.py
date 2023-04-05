@@ -89,3 +89,11 @@ def dbus_to_python(data) -> Any:
         return [dbus_to_python(element) for element in data]
     if isinstance(data, dbus.Dictionary):
         return {str(key): dbus_to_python(value) for key, value in data.items()}
+
+
+def dbus_to_string(data) -> str:
+    return "".join([chr(byte) for byte in dbus_to_python(data)])
+
+
+def string_to_bytes(data: str):
+    return [dbus.Byte(ord(chr)) for chr in data]
