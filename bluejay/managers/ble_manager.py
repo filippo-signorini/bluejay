@@ -39,6 +39,8 @@ class BLEManager:
         assert adapter
         self._adapter = adapter
 
+        self.stop_advertising_on_connection = False
+
         self.connected_device = None
         """ The currently connected device proxy or None """
 
@@ -157,7 +159,8 @@ class BLEManager:
     def _set_connected_status(self, status, device_path):
         if status == 1:
             self.connected = True
-            self.advertising = False
+            if self.stop_advertising_on_connection:
+                self.advertising = False
 
             self._set_device_proxy(device_path)
 
@@ -165,7 +168,8 @@ class BLEManager:
                 self.on_connect("s")
         else:
             self.connected = False
-            self.advertising = True
+            if self.stop_advertising_on_connection:
+                self.advertising = True
 
             if self.on_disconnect:
                 self.on_disconnect("s")
