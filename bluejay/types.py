@@ -10,7 +10,6 @@ DeviceEventCallback = Callable[[Any], None]
 AdvertsementChangeCallback = Callable[[bool, Optional[DBusException]], None]
 ApplicationChangedCallback = Callable[
     [
-        Application,
         Literal["registered", "unregistered", "error"],
         Optional[DBusException],
     ],

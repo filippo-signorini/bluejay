@@ -84,7 +84,7 @@ class BLEManager:
         self._ad: Optional[Advertisement] = None
         self._advertising: bool = False
 
-        self._apps: List[Application] = []
+        self.app: Optional[Application] = None
         self._agent: Optional[Agent] = None
 
         self.connected = False
@@ -123,20 +123,21 @@ class BLEManager:
                 on_error=self.__advertising_error,
             )
 
-    def add_application(self, app: Application):
-        if not app in self._apps:
-            self._app_manager.register_application(
-                app,
-                on_success=lambda: self.__application_registered(app),
-                on_error=lambda err: self.__application_error(err, app),
-            )
+    def set_application(self, app: Application):
+        self.remove_application()
 
-    def remove_application(self, app: Application):
-        if app in self._apps:
+        self._app_manager.register_application(
+            app,
+            on_success=lambda: self.__application_registered(app),
+            on_error=lambda err: self.__application_error(err),
+        )
+
+    def remove_application(self):
+        if self.app is not None:
             self._app_manager.unregister_application(
-                app,
-                on_success=lambda: self.__application_unregistered(app),
-                on_error=lambda err: self.__application_error(err, app),
+                self.app,
+                on_success=self.__application_unregistered,
+                on_error=lambda err: self.__application_error(err),
             )
 
     @property
@@ -221,18 +222,18 @@ class BLEManager:
             self.on_advertising_change(self._advertising, error)
 
     def __application_registered(self, app: Application):
-        self._apps.append(app)
+        self.app = app
         if self.on_application_change:
-            self.on_application_change(app, "registered", None)
+            self.on_application_change("registered", None)
 
-    def __application_unregistered(self, app: Application):
-        self._apps.remove(app)
+    def __application_unregistered(self):
+        self.app = None
         if self.on_application_change:
-            self.on_application_change(app, "unregistered", None)
+            self.on_application_change("unregistered", None)
 
-    def __application_error(self, error, app):
+    def __application_error(self, error):
         if self.on_application_change:
-            self.on_application_change(app, "error", error)
+            self.on_application_change("error", error)
 
     def _app_added(self):
         print("Added application")
