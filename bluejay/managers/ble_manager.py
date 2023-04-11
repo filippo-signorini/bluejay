@@ -39,7 +39,7 @@ class BLEManager:
         assert adapter
         self._adapter = adapter
 
-        self.stop_advertising_on_connection = False
+        self.stop_advertising_on_connection = True
 
         self.connected_device = None
         """ The currently connected device proxy or None """
