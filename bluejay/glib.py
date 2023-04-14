@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Optional
 
 import dbus.mainloop.glib
 from gi.repository import GLib as _GLib  # type: ignore
@@ -12,6 +12,11 @@ class GLib:
     @staticmethod
     def timeout_add(interval_milli: int, cb: Callable) -> int:
         return _GLib.timeout_add(interval_milli, cb)
+
+    @staticmethod
+    def source_remove(id: Optional[int]):
+        if id is not None:
+            _GLib.source_remove(id)
 
 
 class MainLoop:
