@@ -85,7 +85,7 @@ def dbus_to_python(data) -> Any:
         return int(data)
     if isinstance(data, dbus.Double):
         return float(data)
-    if isinstance(data, dbus.Array):
+    if isinstances(data, dbus.Array, list):
         return [dbus_to_python(element) for element in data]
     if isinstance(data, dbus.Dictionary):
         return {str(key): dbus_to_python(value) for key, value in data.items()}
