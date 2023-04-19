@@ -95,5 +95,9 @@ def dbus_to_string(data) -> str:
     return "".join([chr(byte) for byte in dbus_to_python(data)])
 
 
+def bytes_to_dbus_bytes(bytes: list[int]):
+    return [dbus.Byte(byte) for byte in bytes]
+
+
 def string_to_bytes(data: str):
     return [dbus.Byte(ord(chr)) for chr in data]
