@@ -19,7 +19,7 @@ from ..types import (
     ApplicationChangedCallback,
     DeviceEventCallback,
 )
-from ..utils import dbus_to_python, find_adapter
+from ..utils import dbus_to_python, disconnect_connected_devices, find_adapter
 from .advertising_manager import AdvertisingManager
 from .agent_manager import AgentManager
 from .application_manager import ApplicationManager
@@ -36,12 +36,13 @@ class BLEManager:
         self._debug = debug
         self.bus = dbus.SystemBus()
         adapter = find_adapter(self.bus)
+        disconnect_connected_devices(self.bus)
         assert adapter
         self._adapter = adapter
 
         self.stop_advertising_on_connection = True
 
-        self.connected_device = None
+        self.connected_device: Optional[dbus.Interface] = None
         """ The currently connected device proxy or None """
 
         self._ad_manager = AdvertisingManager(self.bus, self._adapter)
@@ -165,14 +166,14 @@ class BLEManager:
             self._set_device_proxy(device_path)
 
             if self.on_connect:
-                self.on_connect("s")
+                self.on_connect(device_path)
         else:
             self.connected = False
             if self.stop_advertising_on_connection:
                 self.advertising = True
 
             if self.on_disconnect:
-                self.on_disconnect("s")
+                self.on_disconnect("")
 
     def _set_device_proxy(self, path):
         self.connected_device = dbus.Interface(

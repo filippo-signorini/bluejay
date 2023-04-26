@@ -8,6 +8,7 @@ from .constants import (
     BLUEZ_SERVICE_NAME,
     DBUS_OM_IFACE,
     DBUS_PROPERTIES,
+    DEVICE_INTERFACE,
     GATT_MANAGER_INTERFACE,
 )
 
@@ -40,11 +41,34 @@ def find_adapter(bus: dbus.SystemBus):
                 bus.get_object(BLUEZ_SERVICE_NAME, obj),
                 DBUS_PROPERTIES,
             )
-            adapter_props.Set(ADAPTER_INTERFACE, "Powered", dbus.Boolean(True))
-            adapter_props.Set(ADAPTER_INTERFACE, "Pairable", dbus.Boolean(False))
+            try:
+                adapter_props.Set(ADAPTER_INTERFACE, "Powered", dbus.Boolean(True))
+                adapter_props.Set(ADAPTER_INTERFACE, "Pairable", dbus.Boolean(False))
+            except dbus.DBusException:
+                print("Cannot set dbus properties")
+
             return obj
 
     return None
+
+
+def disconnect_connected_devices(bus: dbus.SystemBus):
+    object_manager = dbus.Interface(
+        bus.get_object(BLUEZ_SERVICE_NAME, "/"),
+        DBUS_OM_IFACE,
+    )
+    objects = object_manager.GetManagedObjects()
+    path = None
+    for object_path, props in objects.items():
+        device = props.get(DEVICE_INTERFACE, None)
+        if device is None:
+            continue
+
+        dev_iface = dbus.Interface(
+            bus.get_object(BLUEZ_SERVICE_NAME, object_path),
+            DEVICE_INTERFACE,
+        )
+        dev_iface.Disconnect()
 
 
 def get_hostname(bus: dbus.SystemBus) -> str:
