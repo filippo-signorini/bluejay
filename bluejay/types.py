@@ -1,4 +1,9 @@
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Optional
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 from dbus.exceptions import DBusException
 
