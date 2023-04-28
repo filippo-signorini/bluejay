@@ -1,5 +1,5 @@
 import threading
-from typing import List, Optional
+from typing import Optional
 
 import dbus
 import dbus.service

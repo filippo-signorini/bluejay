@@ -48,19 +48,19 @@ class Advertisement(dbus.service.Object):
         Possible values: `broadcast` or `peripheral`.
         """
 
-        self.service_uuids: typing.Optional[list[str]] = None
+        self.service_uuids: typing.Optional[typing.List[str]] = None
         """
         List of UUIDs to include in the `Service UUID` field of the
         `Advertising Data`.
         """
 
-        self.manufacturer_data: typing.Optional[dict[int, typing.Any]] = None
+        self.manufacturer_data: typing.Optional[typing.Dict[int, typing.Any]] = None
         """
         Manufacturer Data fields to include in the Advertising Data.
         Keys are the manufacturer ID to associate with the data.
         """
 
-        self.solicit_uuids: typing.Optional[list[str]] = None
+        self.solicit_uuids: typing.Optional[typing.List[str]] = None
         """
         Array of UUIDs to include in `Service Solicitation` Advertisement Data.
         """
@@ -71,7 +71,7 @@ class Advertisement(dbus.service.Object):
         with the data.
         """
 
-        self.data: typing.Optional[dict[int, list[int]]] = None
+        self.data: typing.Optional[typing.Dict[int, typing.List[int]]] = None
         """
         *Experimental*
 
@@ -108,7 +108,7 @@ class Advertisement(dbus.service.Object):
         Note: This property shall not be set when Type is set to 'broadcast'.
         """
 
-        self.includes: typing.Optional[list[str]] = None
+        self.includes: typing.Optional[typing.List[str]] = None
         """
         List of features to be included in the advertising packet.
 

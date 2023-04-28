@@ -19,7 +19,7 @@ class Application(dbus.service.Object):
     def __init__(self, bus: dbus.SystemBus, path: str):
         self.path = path
         self.bus = bus
-        self.services: list[Service] = []
+        self.services: typing.List[Service] = []
         super().__init__(bus, path)
 
     def get_path(self):
@@ -56,7 +56,7 @@ class Service(dbus.service.Object):
         self.bus = bus
         self.uuid = uuid
         self.primary = primary
-        self.characteristics: list[Characteristic] = []
+        self.characteristics: typing.List[Characteristic] = []
         super().__init__(bus, self.path)
 
     def get_properties(self):
@@ -101,7 +101,7 @@ class Characteristic(dbus.service.Object):
         bus: dbus.SystemBus,
         index: int,
         uuid: str,
-        flags: list[CharacteristicFlag],
+        flags: typing.List[CharacteristicFlag],
         service: Service,
     ):  # pylint: disable=too-many-arguments
         self.path = f"{service.path}/char{index}"
@@ -109,7 +109,7 @@ class Characteristic(dbus.service.Object):
         self.uuid = uuid
         self.service = service
         self.flags = flags
-        self.descriptors: list[Descriptor] = []
+        self.descriptors: typing.List[Descriptor] = []
         super().__init__(bus, self.path)
 
     def get_properties(self):
@@ -157,8 +157,8 @@ class Characteristic(dbus.service.Object):
     @dbus.service.method(GATT_CHARACTERISTIC_INTERFACE, in_signature="aya{sv}")
     def WriteValue(
         self,
-        value: list[int],  # pylint: disable=unused-argument
-        options: dict[str, typing.Any],  # pylint: disable=unused-argument
+        value: typing.List[int],  # pylint: disable=unused-argument
+        options: typing.Dict[str, typing.Any],  # pylint: disable=unused-argument
     ):  # pylint: disable=invalid-name
         print(f"{self.path}: Default WriteValue called, returning error")
         raise NotSupportedException()
@@ -199,7 +199,7 @@ class Descriptor(dbus.service.Object):
         bus: dbus.SystemBus,
         index: int,
         uuid: str,
-        flags: list[DescriptorFlag],
+        flags: typing.List[DescriptorFlag],
         characteristic: Characteristic,
     ):  # pylint: disable=too-many-arguments
         self.path = f"{characteristic.path}/desc{index}"

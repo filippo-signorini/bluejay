@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 import dbus
 import dbus.service
@@ -119,7 +119,7 @@ def dbus_to_string(data) -> str:
     return "".join([chr(byte) for byte in dbus_to_python(data)])
 
 
-def bytes_to_dbus_bytes(bytes: list[int]):
+def bytes_to_dbus_bytes(bytes: List[int]):
     return [dbus.Byte(byte) for byte in bytes]
 
 
