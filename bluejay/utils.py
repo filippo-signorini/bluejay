@@ -116,7 +116,8 @@ def dbus_to_python(data) -> Any:
 
 
 def dbus_to_string(data) -> str:
-    return "".join([chr(byte) for byte in dbus_to_python(data)])
+    bytestring = b"".join(byte.to_bytes(1, "big") for byte in dbus_to_python(data))
+    return bytestring.decode(encoding="utf-8", errors="replace")
 
 
 def bytes_to_dbus_bytes(bytes: List[int]):
@@ -124,4 +125,5 @@ def bytes_to_dbus_bytes(bytes: List[int]):
 
 
 def string_to_bytes(data: str):
-    return [dbus.Byte(ord(chr)) for chr in data]
+    bytestring = data.encode(encoding="utf-8", errors="replace")
+    return [dbus.Byte(byte) for byte in bytestring]
